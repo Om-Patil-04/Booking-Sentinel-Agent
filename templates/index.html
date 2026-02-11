@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hotel Prediction AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #050511;
+      --glass-surface: rgba(20, 20, 35, 0.7);
+      --glass-highlight: rgba(255, 255, 255, 0.08);
+      --glass-border: rgba(255, 255, 255, 0.12);
+
+      --primary: #8b5cf6;
+      --secondary: #06b6d4;
+      --accent: #10b981;
+      --danger: #f43f5e;
+      --neon-glow: 0 0 15px rgba(139, 92, 246, 0.4);
+
+      --text-main: #ffffff;
+      --text-muted: #94a3b8;
+
+      --font-stack: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    [data-theme="light"] {
+      --bg-deep: #eef2ff;
+      --glass-surface: rgba(255, 255, 255, 0.65);
+      --glass-highlight: rgba(255, 255, 255, 0.8);
+      --glass-border: rgba(0, 0, 0, 0.06);
+      --primary: #6366f1;
+      --secondary: #0ea5e9;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+    }
+
+    * { box-sizing: border-box; outline: none; }
+
+    body {
+      margin: 0;
+      background-color: var(--bg-deep);
+      font-family: var(--font-stack);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(90px);
+      z-index: -1;
+      opacity: 0.6;
+      animation: float 15s infinite ease-in-out;
+    }
+    .blob-1 { width: 50vw; height: 50vw; background: radial-gradient(circle, var(--primary), transparent); top: -10%; left: -10%; }
+    .blob-2 { width: 45vw; height: 45vw; background: radial-gradient(circle, var(--secondary), transparent); bottom: -10%; right: -10%; animation-delay: -5s; }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(20px, -20px) scale(1.05); }
+    }
+
+    .app-container {
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    .glass-panel {
+      background: var(--glass-surface);
+      backdrop-filter: blur(50px);
+      -webkit-backdrop-filter: blur(50px);
+      border: 1px solid var(--glass-border);
+      border-top: 1px solid rgba(255,255,255,0.2);
+      border-radius: 30px;
+      padding: 40px;
+      box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--glass-border);
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .header-content h1 {
+      font-size: 2.6rem;
+      font-weight: 800;
+      margin: 0 0 6px 0;
+      letter-spacing: -1px;
+      background: linear-gradient(120deg, #fff, var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 20px rgba(6, 182, 212, 0.3));
+    }
+
+    .subtitle {
+      font-size: 1rem;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    .compute-widget {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 12px 20px;
+      min-width: 280px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .terminal-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .pulse-dot {
+      width: 8px; height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse { 0%{opacity:1;} 50%{opacity:0.3;} 100%{opacity:1;} }
+
+    .neural-bar-container {
+      display: flex; gap: 3px; height: 6px; align-items: flex-end;
+    }
+
+    .neural-bar {
+      flex: 1; background: var(--secondary); border-radius: 2px;
+      animation: equalizer 1s ease-in-out infinite; opacity: 0.6;
+    }
+    .neural-bar:nth-child(1) { animation-duration: 0.8s; height: 40%; }
+    .neural-bar:nth-child(2) { animation-duration: 1.1s; height: 70%; }
+    .neural-bar:nth-child(3) { animation-duration: 0.9s; height: 100%; }
+    .neural-bar:nth-child(4) { animation-duration: 1.3s; height: 50%; }
+    .neural-bar:nth-child(5) { animation-duration: 0.7s; height: 80%; }
+    .neural-bar:nth-child(6) { animation-duration: 1.0s; height: 30%; }
+
+    @keyframes equalizer { 0%, 100% { transform: scaleY(0.5); } 50% { transform: scaleY(1); } }
+
+    .chat-wrap {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 24px;
+    }
+    @media (max-width: 900px) { .chat-wrap { grid-template-columns: 1fr; } }
+
+    .chat-panel, .form-panel {
+      background: rgba(0,0,0,0.25);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 20px;
+      min-height: 520px;
+    }
+
+    .chat-log {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-height: 420px;
+      overflow-y: auto;
+      padding-right: 6px;
+    }
+
+    .bubble {
+      max-width: 80%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 0.95rem;
+      line-height: 1.35rem;
+      animation: fadeIn 0.3s ease;
+    }
+    .bubble.user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+    }
+    .bubble.bot {
+      align-self: flex-start;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--glass-border);
+    }
+    .bubble small {
+      display:block; color: var(--text-muted); margin-top: 6px; font-size: 0.75rem;
+      font-family: var(--font-mono);
+    }
+
+    @keyframes fadeIn { from {opacity:0; transform: translateY(6px);} to {opacity:1; transform: translateY(0);} }
+
+    .typing {
+      display: inline-flex; gap: 4px; align-items: center;
+    }
+    .typing span {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--secondary); opacity: 0.4; animation: blink 1s infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink { 0%,100%{opacity:.2} 50%{opacity:1} }
+
+    .chat-input {
+      margin-top: 16px;
+      display: flex;
+      gap: 10px;
+    }
+    textarea {
+      width: 100%;
+      background: rgba(10, 10, 20, 0.4);
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      padding: 12px;
+      color: var(--text-main);
+      min-height: 60px;
+      resize: vertical;
+      font-family: var(--font-stack);
+    }
+    button {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border: none; color: #fff; font-weight: 700;
+      padding: 12px 18px; border-radius: 12px; cursor: pointer;
+      letter-spacing: 0.6px;
+    }
+
+    .form-panel h3 { margin-top: 0; font-size: 1rem; letter-spacing: 1px; color: var(--text-muted); }
+
+    .input-wrapper { position: relative; margin-bottom: 16px; }
+    .input-wrapper input,
+    .input-wrapper select {
+      width: 100%;
+      background: rgba(10, 10, 20, 0.4);
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      padding: 16px 16px;
+      color: var(--text-main);
+      font-family: inherit;
+      transition: 0.3s ease;
+    }
+    .input-wrapper input:focus,
+    .input-wrapper select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15);
+    }
+    .floating-label {
+      position: absolute; left: 14px; top: -9px;
+      background: var(--bg-deep);
+      padding: 0 6px;
+      font-size: 0.72rem;
+      color: var(--secondary);
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      border-radius: 4px;
+    }
+    .validation-dot {
+      position: absolute; right: 16px; top: 50%;
+      transform: translateY(-50%);
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--glass-border);
+      transition: 0.3s;
+    }
+    .input-wrapper input:valid ~ .validation-dot,
+    .input-wrapper select:valid ~ .validation-dot {
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+      transform: translateY(-50%) scale(1.4);
+    }
+
+    .result-card {
+      margin-top: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      background: rgba(0,0,0,0.25);
+      font-size: 0.9rem;
+    }
+
+    .theme-trigger {
+      position: fixed; top: 20px; right: 20px;
+      background: var(--glass-surface); backdrop-filter: blur(10px);
+      border: 1px solid var(--glass-border); width: 40px; height: 40px;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; z-index: 100; font-size: 1.2rem;
+    }
+  </style>
+</head>
+<body data-theme="dark">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <canvas id="stars" style="position: fixed; inset: 0; z-index: -1; pointer-events: none;"></canvas>
+
+  <button class="theme-trigger" id="themeToggle">◑</button>
+
+  <div class="app-container">
+    <div class="glass-panel">
+      <header>
+        <div class="header-content">
+          <h1>Hotel Prediction AI</h1>
+          <div class="subtitle">Advanced Stochastic Booking Intelligence Engine</div>
+        </div>
+
+        <div class="compute-widget">
+          <div class="terminal-row">
+            <span id="sysMsg">SYSTEM IDLE</span>
+            <div class="pulse-dot"></div>
+          </div>
+          <div class="neural-bar-container">
+            <div class="neural-bar"></div>
+            <div class="neural-bar"></div>
+            <div class="neural-bar"></div>
+            <div class="neural-bar"></div>
+            <div class="neural-bar"></div>
+            <div class="neural-bar"></div>
+          </div>
+          <div class="terminal-row" style="color: var(--text-muted); font-size: 0.65rem; margin-top:4px;">
+            <span id="memStat">MEM: 40%</span>
+            <span id="cpuStat">NET: OK</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="chat-wrap">
+        <div class="chat-panel">
+          <div class="chat-log" id="chatLog">
+            <div class="bubble bot">
+              Welcome. Share your booking request and I’ll assess the cancellation risk.
+              <small>system</small>
+            </div>
+          </div>
+
+          <div class="chat-input">
+            <textarea id="message" placeholder="Type your message..."></textarea>
+            <button id="sendBtn">Send</button>
+          </div>
+        </div>
+
+        <div class="form-panel">
+          <h3>Structured Booking Fields</h3>
+
+          <div class="input-wrapper">
+            <input id="lead_time" type="number" min="0" required />
+            <div class="floating-label">Lead Time (days)</div>
+            <div class="validation-dot"></div>
+          </div>
+
+          <div class="input-wrapper">
+            <input id="no_of_special_requests" type="number" min="0" max="10" required />
+            <div class="floating-label">Special Requests</div>
+            <div class="validation-dot"></div>
+          </div>
+
+          <div class="input-wrapper">
+            <input id="avg_price_per_room" type="number" min="0" required />
+            <div class="floating-label">Avg Price per Room</div>
+            <div class="validation-dot"></div>
+          </div>
+
+          <div class="input-wrapper">
+            <input id="arrival_month" type="number" min="1" max="12" required />
+            <div class="floating-label">Arrival Month (1–12)</div>
+            <div class="validation-dot"></div>
+          </div>
+
+          <div class="input-wrapper">
+            <input id="arrival_date" type="number" min="1" max="31" required />
+            <div class="floating-label">Arrival Date (1–31)</div>
+            <div class="validation-dot"></div>
+          </div>
+
+          <div class="input-wrapper">
+            <input id="no_of_week_nights" type="number" min="0" required />
+            <div class="floating-label">Week Nights</div>
+            <div class="validation-dot"></div>
+          </div>
+
+          <div class="input-wrapper">
+            <input id="no_of_weekend_nights" type="number" min="0" required />
+            <div class="floating-label">Weekend Nights</div>
+            <div class="validation-dot"></div>
+          </div>
+
+          <div class="input-wrapper">
+            <select id="type_of_meal_plan" required>
+              <option value="" disabled selected></option>
+              <option>Breakfast Only (→ 0)</option>
+              <option>Breakfast + Dinner (→ 1)</option>
+              <option>All Meals (→ 3)</option>
+              <option>No Meal Plan (→ 0)</option>
+            </select>
+            <div class="floating-label">Meal Plan (encoded)</div>
+            <div class="validation-dot"></div>
+          </div>
+
+          <div class="input-wrapper">
+            <select id="market_segment_type" required>
+              <option value="" disabled selected></option>
+              <option>Online (→ 4)</option>
+              <option>Offline (→ 3)</option>
+              <option>Corporate (→ 2)</option>
+              <option>Aviation (→ 1)</option>
+              <option>Complementary (→ 0)</option>
+            </select>
+            <div class="floating-label">Market Segment (encoded)</div>
+            <div class="validation-dot"></div>
+          </div>
+
+          <div class="input-wrapper">
+            <select id="room_type_reserved" required>
+              <option value="" disabled selected></option>
+              <option>Room Type 1 (→ 0)</option>
+              <option>Room Type 2 (→ 1)</option>
+              <option>Room Type 3 (→ 2)</option>
+              <option>Room Type 4 (→ 3)</option>
+            </select>
+            <div class="floating-label">Room Type (encoded)</div>
+            <div class="validation-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('stars');
+    const ctx = canvas.getContext('2d');
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize);
+    resize();
+    let stars = [];
+    for (let i = 0; i < 150; i++) {
+      stars.push({
+        x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+        size: Math.random() * 1.5, opacity: Math.random(), speed: Math.random() * 0.2
+      });
+    }
+    function animate() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = 'white';
+      stars.forEach(star => {
+        ctx.globalAlpha = star.opacity;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.size, 0, Math.PI*2);
+        ctx.fill();
+        star.y -= star.speed;
+        if (star.y < 0) star.y = canvas.height;
+      });
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    const msgs = ["AWAITING INPUT", "MONITORING", "NEURAL LINK ACTIVE", "SYNCING"];
+    const sysMsg = document.getElementById("sysMsg");
+    const memStat = document.getElementById("memStat");
+    setInterval(() => {
+      sysMsg.innerText = msgs[Math.floor(Math.random() * msgs.length)];
+      memStat.innerText = `MEM: ${Math.floor(Math.random() * 40) + 20}%`;
+    }, 2500);
+
+    const toggle = document.getElementById('themeToggle');
+    toggle.addEventListener('click', () => {
+      const body = document.body;
+      body.setAttribute('data-theme', body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    });
+
+    const chatLog = document.getElementById("chatLog");
+    const sendBtn = document.getElementById("sendBtn");
+    const messageEl = document.getElementById("message");
+
+    function addBubble(text, who="bot", meta="agent") {
+      const div = document.createElement("div");
+      div.className = `bubble ${who}`;
+      div.innerHTML = `${text}<small>${meta}</small>`;
+      chatLog.appendChild(div);
+      chatLog.scrollTop = chatLog.scrollHeight;
+      return div;
+    }
+
+    function addResultCard(pred) {
+      if (!pred) return;
+      const statusMessage =
+        pred.prediction === "Not Canceled"
+          ? "✅ Reservation looks stable. Low cancellation risk."
+          : "⚠️ Elevated cancellation risk. Consider confirming with the hotel.";
+
+      const div = document.createElement("div");
+      div.className = "bubble bot";
+      div.innerHTML = `
+        <div class="result-card">
+          <strong>Prediction:</strong> ${pred.prediction}<br/>
+          <strong>Prob. Canceled:</strong> ${pred.probability_canceled_percent}%<br/>
+          <strong>Prob. Not Canceled:</strong> ${pred.probability_not_canceled_percent}%<br/>
+          <em>${statusMessage}</em>
+        </div>
+        <small>risk engine</small>
+      `;
+      chatLog.appendChild(div);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const msg = messageEl.value.trim();
+      if (!msg) return;
+
+      const payload = {
+        message: msg,
+        lead_time: document.getElementById("lead_time").value,
+        no_of_special_requests: document.getElementById("no_of_special_requests").value,
+        avg_price_per_room: document.getElementById("avg_price_per_room").value,
+        arrival_month: document.getElementById("arrival_month").value,
+        arrival_date: document.getElementById("arrival_date").value,
+        no_of_week_nights: document.getElementById("no_of_week_nights").value,
+        no_of_weekend_nights: document.getElementById("no_of_weekend_nights").value,
+        type_of_meal_plan: document.getElementById("type_of_meal_plan").value,
+        market_segment_type: document.getElementById("market_segment_type").value,
+        room_type_reserved: document.getElementById("room_type_reserved").value
+      };
+
+      addBubble(msg, "user", "you");
+      messageEl.value = "";
+      messageEl.focus();
+
+      sendBtn.disabled = true;
+      const thinking = addBubble(`Thinking <span class="typing"><span></span><span></span><span></span></span>`, "bot", "agent");
+
+      try {
+        const res = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        thinking.remove();
+        addBubble(data.message || "No response.", "bot", "agent");
+        addResultCard(data.prediction);
+      } catch (err) {
+        thinking.remove();
+        addBubble("Error contacting server.", "bot", "error");
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
+
+    sendBtn.addEventListener("click", sendMessage);
+
+    messageEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>
