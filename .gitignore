@@ -1,0 +1,8 @@
+# virtual environment
+venv/
+
+# models
+models/
+
+# env files
+.env
